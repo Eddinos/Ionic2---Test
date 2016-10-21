@@ -1,7 +1,6 @@
 {
-  "name": "ionic-hello-world",
-  "author": "Ionic Framework",
-  "homepage": "http://ionicframework.com/",
+  "name": "level-ladder",
+  "author": "Eddine Djerboua",
   "private": true,
   "scripts": {
     "build": "ionic-app-scripts build",

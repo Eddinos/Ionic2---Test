@@ -12,14 +12,9 @@ import { NavController, NavParams } from 'ionic-angular';
 	templateUrl: 'level.html'
 })
 export class Level {
-	private value: number;
+	public value: number;
 
   constructor(public navParams: NavParams) {
   	this.value = navParams.get('value');
   }
-
-  ionViewDidLoad() {
-    console.log('Hello Level Page');
-  }
-
 }

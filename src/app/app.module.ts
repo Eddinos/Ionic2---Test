@@ -2,7 +2,6 @@ import { NgModule } from '@angular/core';
 import { IonicApp, IonicModule } from 'ionic-angular';
 import { MyApp } from './app.component';
 import { HomePage } from '../pages/home/home';
-import { AboutPage } from '../pages/about/about';
 import { User } from '../model/user';
 import { Level } from '../pages/level/level';
 
@@ -10,7 +9,6 @@ import { Level } from '../pages/level/level';
   declarations: [
     MyApp,
     HomePage,
-    AboutPage,
     Level
   ],
   imports: [
@@ -20,7 +18,6 @@ import { Level } from '../pages/level/level';
   entryComponents: [
     MyApp,
     HomePage,
-    AboutPage,
     Level
   ],
   providers: []
