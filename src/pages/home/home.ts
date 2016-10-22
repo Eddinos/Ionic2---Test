@@ -5,11 +5,15 @@ import { Platform } from 'ionic-angular';
 import { User } from '../../model/user';
 import { Level } from '../level/level';
 
-/*
-  Generated class for the About page.
+import * as d3 from 'd3';
+import * as d3Shape from 'd3-shape';
+import * as d3Selection from 'd3-selection';
 
-  See http://ionicframework.com/docs/v2/components/#navigation for more info on
-  Ionic pages and navigation.
+
+/*
+  Generated class for the Home page.
+
+  This component displays a map showing the level progression of the user
 */
 @Component({
   templateUrl: 'home.html',
@@ -18,93 +22,97 @@ import { Level } from '../level/level';
   ]
 })
 export class HomePage {
-	private canv: any;
-	private ctx: any;
 	private platform: Platform;
 	private user: User;
-	private context: CanvasRenderingContext2D;
 	private stepsHeightGap: number;
-	private stepRadius: number;
 	private navCtrl: NavController;
-
-	@ViewChild("myCanvas") myCanvas;
+	private svgContainer: any;
 
 	constructor(platform: Platform, user: User, navCtrl: NavController) {
 		this.platform = platform;
 		this.user = user;
 		this.stepsHeightGap = 90;
-		this.stepRadius = 30;
 		this.navCtrl = navCtrl;
 	}
 
-	stepSelection(event:any, elem:any) {
-		
-		this.user.levelMap.forEach(function (pt, i) {
-			var xDifference = event.offsetX - pt.x
-			var xDistance = xDifference * xDifference;
-			var yDifference = event.offsetY - pt.y
-			var yDistance = yDifference * yDifference;
-
-			if(xDistance + yDistance < elem.stepRadius * elem.stepRadius)
-			{
-				elem.navCtrl.push(Level, {
-					value: (+i+1)
-				});
-			}
-		})
-	}
-
+	/*
+	* Set the 
+	*/
 	ngAfterViewInit() {
-		console.log(this.user);
-		let canvas = this.myCanvas.nativeElement;
-		canvas.width = this.platform.width();
-		if(this.user.level*this.stepsHeightGap > this.platform.height()) {
-			canvas.height = this.user.level*this.stepsHeightGap + 120;
-		}
-		else
-		{
-			canvas.height = this.platform.height() - 60;
-		}
+		// Container's height should be greater than the sum of all steps height, unless there are not enough to fill the platform's height
+		var maxHeight = (this.user.level*this.stepsHeightGap > this.platform.height()) ? this.user.level*this.stepsHeightGap + 120 : this.platform.height() - 60;
 
-		this.user.levelMap.push( {x: 40, y: canvas.height - 60} );
+		this.svgContainer = d3Selection.select('#visualization')
+																		.attr('width', this.platform.width())
+																		.attr('height', maxHeight);
+
+		// The first step is always at the same spot, and is a reference for all the next ones
+		this.user.levelMap.push( {x: 40, y: maxHeight - 60} );
 		this.generateLvlMap();
-
-		this.context = canvas.getContext("2d");
 
 		this.drawPath();
 		this.drawSteps();
-		
-		this.context.stroke();
 	}
 
+	/*
+	*	Generate the coordinates of each level point and store them in the user's levelMap attribute. This is done randomly for now but should follow a constant pattern, or use settled values
+	*/
 	private generateLvlMap() : void {
 		for (var i = 1; i < this.user.level; ++i) {
 			this.user.levelMap.push( {x: (Math.random()+Math.random())/2*this.platform.width(), y: this.user.levelMap[this.user.levelMap.length-1].y-this.stepsHeightGap} );
 		}
 	}
 
+	/*
+	* Draw the path of the level map, following the data created by generateLvlMap function
+	*/
 	private drawPath() : void {
-		this.context.beginPath();
-		var firstLevel = this.user.levelMap[0];
-		this.context.moveTo(firstLevel.x, firstLevel.y)
-		for (var i in this.user.levelMap) {
-			this.context.lineTo(this.user.levelMap[i].x, this.user.levelMap[i].y);
-		}
-		this.context.stroke();
+		var lineFunction = d3Shape.line()
+							.x(function(d, i) { return d.x })
+							.y(function(d, i) { return d.y })
+							.curve(d3Shape.curveCardinal);
+
+		var lineGraph = this.svgContainer.append('path')
+																.attr('d', lineFunction(this.user.levelMap))
+																.attr('stroke', 'black')
+																.attr('stroke-width', 2)
+																.attr('fill', 'none');
 	}
 
+	/*
+	* Draw the steps representing each of the user's level
+	*/
 	private drawSteps() : void {
-		for (var i in this.user.levelMap) {
-			this.context.beginPath();
-			this.context.arc(this.user.levelMap[i].x, this.user.levelMap[i].y, this.stepRadius, 0, 2*Math.PI);
-			this.context.fillStyle = 'white';
-			this.context.fill();
-			this.context.moveTo(this.user.levelMap[i].x, this.user.levelMap[i].y);
-			this.context.fillStyle = 'black';
-			this.context.textAlign = 'center';
-			this.context.textBaseline = 'middle';
-			this.context.fillText((+i+1).toString(), this.user.levelMap[i].x, this.user.levelMap[i].y);
-			this.context.stroke();
-		}
+		var steps = this.svgContainer.selectAll('g')
+														.data(this.user.levelMap)
+														.enter()
+														.append('g')
+											      .on('click', this.stepSelection);
+
+		var circles = steps.append("circle")
+									      .attr("r", 25)
+									      .attr("cx", function(dd){return dd.x})
+									      .attr("cy", function(dd){return dd.y})
+									      .attr("fill", "white")
+									      .attr("stroke", "black");
+
+		var labels = steps.append('text')
+											.attr('x', function(d) { return d.x })
+											.attr('y', function(d) { return d.y })
+											.attr("text-anchor", 'middle')
+											.attr("dy", function(d){ return 5 })
+											.text(function (d, i) {
+												return +i+1;
+											})
 	}
+
+	/*
+	* Called when the user press a step
+	*/
+	private stepSelection = (data:any, index:any, elem:any) => {
+		this.navCtrl.push(Level, {
+			value: index+1
+		})
+	}
+
 }
