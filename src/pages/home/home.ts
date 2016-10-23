@@ -1,11 +1,9 @@
 import { Component } from '@angular/core';
 import { NavController } from 'ionic-angular';
-import { ViewChild } from "@angular/core";
 import { Platform } from 'ionic-angular';
 import { User } from '../../model/user';
 import { Level } from '../level/level';
 
-import * as d3 from 'd3';
 import * as d3Shape from 'd3-shape';
 import * as d3Selection from 'd3-selection';
 
@@ -109,7 +107,7 @@ export class HomePage {
 	/*
 	* Called when the user press a step
 	*/
-	private stepSelection = (data:any, index:any, elem:any) => {
+	private stepSelection = (data:any, index:any) => {
 		this.navCtrl.push(Level, {
 			value: index+1
 		})
